@@ -61,7 +61,7 @@ export const constantRoutes = [
   {
     path: '/product', // 一級路由組件只有兩個 login組件、layout組件
     component: Layout, // 顯示一級路由組件架子，並立即重定向二級路由組件
-    name: 'Product',
+    name: 'Product', // name必須寫，而且必須寫的是路徑首字母大寫，因為後面權限要用。
     meta: { title: '商品管理', icon: 'el-icon-s-shop' },
     redirect: '/product/trademark/list',
     children: [
