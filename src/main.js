@@ -23,6 +23,11 @@ import '@/permission' // permission control
 // 的接口，後期我們還要寫其他api，$API內部就沒有其他的接口了。
 
 import * as API from '@/api/product'
+import CategorySelector from '@/components/CategorySelector'
+import HintButton from '@/components/HintButton'
+
+Vue.component('CategorySelector', CategorySelector)
+Vue.component('HintButton', HintButton)
 Vue.prototype.$API = API
 // {
 //   trademark,

@@ -44,7 +44,7 @@
         width="width"
       />
       <el-table-column
-        label="LOGO"
+        label="品牌LOGO"
         width="width"
       >
         <template slot-scope="{row,$index}">
@@ -77,7 +77,6 @@
             @click="deleteTrademark(row)"
           >刪除
           </el-button>
-
         </template>
       </el-table-column>
     </el-table>
@@ -102,15 +101,14 @@
       @current-change="handleCurrentChange"
       -->
     <el-pagination
-      background
       style="text-align:center"
+      background
       :current-page="page"
       :page-size="limit"
       :pager-count="5"
       :total="total"
       :page-sizes="[3, 5, 10]"
       layout="prev, pager, next, jumper,->, sizes, total"
-
       @current-change="getTrademarkList"
       @size-change="handleSizeChange"
     />
@@ -119,21 +117,26 @@
       點擊添加或點擊修改的對話框頁面，
       寫靜態頁面的時候把東西複製過來，先把內部所有的動態數據刪除掉。
       -->
-    <el-dialog title="新增品牌" :visible.sync="dialogFormVisible">
-      <el-form style="width:90%" :model="tmForm">
+    <!-- dialog對話框根據id改變修改還是新增品牌 -->
+    <el-dialog
+      :title="tmForm.id?'修改品牌':'新增品牌'"
+      :visible.sync="dialogFormVisible"
+    >
+      <el-form ref="tmForm" style="width:90%" :model="tmForm" :rules="rules">
         <!--
            el-form 代表的是表單
            表單裡面是表單項
                 每個表單都可以通過label-width設置表單項名稱的寬度
                 每個表單都可以通過label設置表單項名稱
-           form當中都會寫 :model="對象"
+
+           form當中都會寫 :model="對象" data跟著寫
               作用：1、以後用來對這個form表單驗證
                     2、用來標識這個form收集的數據收集到哪
         -->
-        <el-form-item label="品牌名稱" label-width="100px">
+        <el-form-item label="品牌名稱" label-width="100px" prop="tmName">
           <el-input v-model="tmForm.tmName" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="品牌LOGO" label-width="100px">
+        <el-form-item label="品牌LOGO" label-width="100px" prop="logoUrl">
           <!-- 拷貝upload組件的時候，把html、css、js相關的東西全部拷貝 -->
 
           <!--
@@ -153,8 +156,8 @@
 
             :show-file-list="false" 代表顯示的只有一張圖片，不是多個(照片牆)
 
-             :on-success="handleAvatarSuccess" 代表圖片上傳成功後的回調
-            :before-upload="beforeAvatarUpload" 代表圖片上船前的回調
+            :on-success="handleAvatarSuccess" 代表圖片上傳成功後的回調
+            :before-upload="beforeAvatarUpload" 代表圖片上傳前的回調
 
            -->
           <el-upload
@@ -164,9 +167,10 @@
             :on-success="handleAvatarSuccess"
             :before-upload="beforeAvatarUpload"
           >
+            <!-- 預覽 -->
             <img v-if="tmForm.logoUrl" :src="tmForm.logoUrl" class="avatar">
             <i v-else class="el-icon-plus avatar-uploader-icon" />
-            <div slot="tip" class="el-upload__tip">只能上傳jpg/png文件，且不超過500kb</div>
+            <div slot="tip" class="el-upload__tip">只能上傳jpg文件，且不超過2MB</div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -183,24 +187,55 @@
 export default {
   name: 'Trademark',
   data() {
+    // rule代表當前定義的規則，一般不用，佔位即可
+    // value代表後期要驗證用戶輸入的數據
+    /*
+    callback是一個回調函數，如果callback調用的時候傳遞了參數，代表驗證失敗，如果沒有傳遞
+     代表驗證成功
+    */
+    var validateTmName = (rule, value, callback) => {
+      if (value.length < 2 || value.length > 20) {
+        callback(new Error('品牌名稱的長度必須是2-20之間'))
+      } else {
+        callback()
+      }
+    }
     return {
       page: 1,
       limit: 3,
       trademarkList: [],
       total: 0,
       dialogFormVisible: false, // 這個數據決定了dialog是否顯示
-      imageUrl: '', // upload組件內部的數據，有可能不用
+      // imageUrl: '', // upload組件內部的數據，有可能不用
       tmForm: {
         // tmForm就是我們收集成功的那個品牌對象
         // 用來收集數據
         tmName: '', // 收集品牌名稱
         logoUrl: '' // 收集品牌logo圖片路徑
+      },
+
+      rules: {
+        // 規則
+        // 每個要驗證的規則都是數組，數組裡面是對象，每一個對象就代表驗證的一個規則。
+        // 每個規則對象裡面包含三個東西：1、規則 2、錯誤提示訊息 3、觸發時機(驗證時機)
+        // 觸發時機：一共有三個：1、失去焦點的時候blur 2、內容改變的時候change 3、整體驗證
+        // 1、單個驗證，先把規則寫好，並添加到form身上
+        // 2、將Form-item的prop屬性設置為需驗證
+        tmName: [
+          { required: true, message: '請輸入品牌名稱', trigger: 'blur' },
+          // { min: 2, max: 10, message: '長度在 2 到 10 個字符', trigger: 'change' }
+          { validator: validateTmName, trigger: 'change' } // 自定義驗證規則
+        ],
+        logoUrl: [
+          { required: true, message: '請上傳圖片' } // 這個觸發是在整體驗證的時候才觸發
+        ]
       }
     }
   },
   mounted() {
     this.getTrademarkList()
   },
+
   methods: {
     async getTrademarkList(page = 1) {
       this.page = page
@@ -227,7 +262,7 @@ export default {
     // 圖片上傳成功的回調
     handleAvatarSuccess(res, file) {
     // res代表上傳成功後返回的響應數據
-    // file代表上傳成功後返回的圖片文件本身
+    // file代表上傳成功後返回的圖片文件本身，較詳細
 
       // 本身寫的東西，這個是錯的，他也是收集上傳成功的路徑，但是這樣的寫法只是模擬
       // 他最終收集的是本地路徑，是錯的，我們要的是上傳成功後服務器返回來的線上路徑。
@@ -235,7 +270,7 @@ export default {
       // console.log(URL.createObjectURL(file.raw))
       // blob:http://localhost:9528/6cf4d647-e84e-4869-9662-1800c552c8e0
 
-      this.tmForm.logoUrl = res.data // 或者是file.response.data
+      this.tmForm.logoUrl = res.data // 等於是file.response.data
     },
     // 圖片上傳前的回調
     // 上傳的時候可以限制圖片的格式和大小
@@ -266,10 +301,15 @@ export default {
     // 點擊修改彈出修改品牌的dialog
     showUpdateDialog(row) {
       this.dialogFormVisible = true
+
       // this.tmForm = row // row代表的就是要修改的那一行，就是要修改的品牌對象
+      // 如果這樣寫dialog跟row會一起改變，因此要把兩個分開，讓row複製給dialog是同數據，但
+      // 屬性是不一樣的
+      // 這裡row當中只有基本數據類型，所以淺拷貝就ok，沒必要深拷貝，當然深拷貝也可以
       this.tmForm = {
         ...row
       } // 最簡單的淺拷貝
+
       /*
         row是列表頁中展示的數據
         tmForm是dialog對話框展示的數據
@@ -305,31 +345,40 @@ export default {
           data:[1,2,3]  0x200
         }
       */
-
-      // 這裡row當中只有基本數據類型，所以淺拷貝就ok，沒必要深拷貝，當然深拷貝也可以
     },
 
     // 點擊確定按鈕發請求添加或者修改品牌
-    async addOrUpdateTrademark() {
-      // 獲取參數
-      const trademark = this.tmForm // tmForm就是我們添加或者修改最終收集到的品牌數據
-      // 整理參數，一般是我們的參數數據不符合我們請求的參數數據，那麼就需要整理
-      // 發請求
-      try {
-        // 成功幹啥
-        await this.$API.trademark.addOrUpdate(trademark)
-        // 1、提示
-        this.$message.success(trademark.id ? '修改品牌成功' : '新增品牌成功')
-        // 2、關閉dialog，回到列表頁
-        this.dialogFormVisible = false
-        // 3、重新發請求獲取列表頁數據
-        // 如果添加成功，那麼重新請求的第一頁數據，添加新的數據是在最後一頁
-        // 如果修改成功，那麼得重新請求這條數據所在的頁數
-        this.getTrademarkList(trademark.id ? this.page : 1)
-      } catch (error) {
-      // 失敗幹啥
-        this.$message.error(trademark.id ? '修改品牌失敗' : '新增品牌失敗')
-      }
+    addOrUpdateTrademark() {
+      // 整體驗證
+      // 要寫ref獲取form
+      this.$refs.tmForm.validate(async(valid) => {
+        // async要換位置
+        // 驗證成功，才發請求
+        if (valid) {
+          // 獲取參數
+          const trademark = this.tmForm // tmForm就是我們添加或者修改最終收集到的品牌數據
+          // 整理參數，一般是我們的參數數據不符合我們請求的參數數據，那麼就需要整理
+          // 發請求
+          try {
+            // 成功幹啥
+            await this.$API.trademark.addOrUpdate(trademark)
+            // 1、提示
+            this.$message.success(trademark.id ? '修改品牌成功' : '新增品牌成功')
+            // 2、關閉dialog，回到列表頁
+            this.dialogFormVisible = false
+            // 3、重新發請求獲取列表頁數據
+            // 如果添加成功，那麼重新請求的第一頁數據，添加新的數據是在最後一頁
+            // 如果修改成功，那麼得重新請求這條數據所在的頁數
+            this.getTrademarkList(trademark.id ? this.page : 1)
+          } catch (error) {
+            // 失敗幹啥
+            this.$message.error(trademark.id ? '修改品牌失敗' : '新增品牌失敗')
+          }
+        } else {
+          console.log('error submit!!')
+          return false
+        }
+      })
     },
 
     // 點擊刪除按鈕，刪除對應品牌

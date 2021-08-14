@@ -8,6 +8,7 @@
 // 使用引入並暴露的方式，default引入的時候不能簡寫
 export { default as trademark } from './trademark'
 export { default as attr } from './attr'
+export { default as category } from './category'
 
 // 相當於分別暴露了 trademark和attr 對象
 
