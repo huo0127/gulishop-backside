@@ -1,9 +1,23 @@
 <template>
   <div>
     <!-- CategorySelector -->
-    <el-form :inline="true" class="demo-form-inline">
-      <el-form-item label="一級分類" :model="cForm">
-        <!-- selecor、option默認必須要有value，沒有會報錯 -->
+    <el-form
+      :inline="true"
+      class="demo-form-inline"
+      :disabled="!isShowList"
+    >
+      <el-form-item
+        label="一級分類"
+        :model="cForm"
+      >
+        <!-- selector、option默認必須要有value，沒有會報錯 -->
+        <!--
+          selector 收集選中的option的value值，順便把v-model給寫了，
+          收集到cForm裡面，就把上面的form當中寫個:model="cForm"，
+          然後發現data裡面要保存起來。
+          二級是當一級被選中的時候才會有數據，
+          所以 @change="handlerCategory1"
+          -->
         <el-select
           v-model="cForm.category1Id"
           placeholder="請選擇"
@@ -57,6 +71,7 @@
 <script>
 export default {
   name: 'CategorySelector',
+  props: ['isShowList'],
   data() {
     return {
       category1List: [],
@@ -91,9 +106,11 @@ export default {
       this.cForm.category3Id = ''
 
       // 選中1級要觸發自訂義事件，把1級的id傳遞給父組件
-      // this.$emit('handlerCategory', category1Id) // 我們傳遞的id區分不了是幾級id
+      // this.$emit('handlerCategory', category1Id)
+      // 我們傳遞的id區分不了是幾級id，因為一級可能有id是1，二級有可能id是1
       this.$emit('handlerCategory', { categoryId: category1Id, level: 1 })
 
+      // 拿二級列表
       const result = await this.$API.category.getCategory2(category1Id)
       if (result.code === 200) {
         this.category2List = result.data
@@ -110,6 +127,7 @@ export default {
       // this.$emit('handlerCategory', category2Id) // 我們傳遞的id區分不了是幾級id
       this.$emit('handlerCategory', { categoryId: category2Id, level: 2 })
 
+      // 拿三級列表
       const result = await this.$API.category.getCategory3(category2Id)
       if (result.code === 200) {
         this.category3List = result.data
@@ -117,6 +135,8 @@ export default {
     },
 
     handlerCategory3(category3Id) {
+      // 先讓這個函數是個空，不知道後面要做啥
+      // 做到這解決一個bug，重新選中必須清空
       // 選中3級要觸發自訂義事件，把3級的id傳遞給父組件
       // this.$emit('handlerCategory', category3Id) // 我們傳遞的id區分不了是幾級id
       this.$emit('handlerCategory', { categoryId: category3Id, level: 3 })
