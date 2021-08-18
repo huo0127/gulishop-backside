@@ -40,6 +40,12 @@ export default {
   //   查詢品牌的分頁列表數據
   getPageList(page, limit) {
     return request.get(`/admin/product/baseTrademark/${page}/${limit}`)
+  },
+
+  // 獲取所有的品牌列表而不是分頁列表
+  // GET /admin/product/baseTrademark/getTrademarkList
+  getList() {
+    return request.get('/admin/product/baseTrademark/getTrademarkList')
   }
 }
 

@@ -139,6 +139,8 @@
             label="屬性值名稱"
             width="width"
           >
+
+            <!-- 編輯模式或者是查看模式的切換 -->
             <template slot-scope="{row,$index}">
               <el-input
                 v-if="row.isEdit"
@@ -160,6 +162,7 @@
             label="操作"
             width="width"
           >
+
             <template slot-scope="{row,$index}">
               <el-popconfirm
                 :title="`確定刪除 ${row.valueName} 這個屬性值？`"
@@ -337,18 +340,18 @@ export default {
       */
       const isRepeat = this.attrForm.attrValueList.some(item => {
         /*
-        如果我當前這個item不能於row，看看 item.valueName === row.valueName ，如果一樣就返回true
+       去除自身再去找，如果item.valueName === row.valueName 代表有重複就返回true
        */
+
         if (item !== row) {
           return item.valueName === row.valueName
         }
+        if (isRepeat) {
+          this.$message.info('輸入的屬性值名稱不能重複')
+          row.valueName = ''
+          return
+        }
       })
-
-      if (isRepeat) {
-        this.$message.info('輸入的屬性值名稱不能重複')
-        row.valueName = ''
-        return
-      }
 
       row.isEdit = false
     },
@@ -369,9 +372,10 @@ export default {
     async save() {
       // 1、獲取參數
       const attr = this.attrForm
+
       // 2、整理參數
-      // 1、屬性值名稱如果為空串，從屬性值列表當中去除
-      // 2、屬性值當中去除isEdit屬性，isEdit是我們添加用來標示查看模式和編輯模式的
+      // 2-1、屬性值名稱如果為空串，從屬性值列表當中去除
+      // 2-2、屬性值當中去除isEdit屬性，isEdit是我們添加用來標示查看模式和編輯模式的
       attr.attrValueList = attr.attrValueList.filter((item) => {
         if (item.valueName !== '') {
           delete item.isEdit

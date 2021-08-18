@@ -81,7 +81,16 @@
 
       <!-- spu的添加與修改頁面 -->
       <!-- <div></div> -->
-      <SpuForm v-show="isShowSpuForm" />
+      <!-- <SpuForm
+        v-show="isShowSpuForm"
+        :visible="isShowSpuForm"
+        @update:visible="isShowSpuForm = $event"
+      /> -->
+      <SpuForm
+        v-show="isShowSpuForm"
+        ref="spu"
+        :visible.sync="isShowSpuForm"
+      />
 
       <!-- sku的添加頁面 -->
       <!-- <div></div> -->
@@ -155,11 +164,14 @@ export default {
     // 點擊添加spu的回調，顯示spu的添加頁面
     showAddSpuForm() {
       this.isShowSpuForm = true
+      // 獲取到子組件對象，調用子組件裡面的方法，進行發請求
+      this.$refs.spu.getAddInitData()
     },
 
     // 點擊修改spu的回調，顯示spu的修改頁面 (和添加是同一個頁面)
     showUpdateSpuForm(row) {
       this.isShowSpuForm = true
+      this.$refs.spu.getUpdateInitData(row)
     },
 
     // 點擊添加sku的回調，顯示sku的添加頁面
