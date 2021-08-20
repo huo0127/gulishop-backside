@@ -92,12 +92,19 @@
                 :key="saleAttrValue.id"
                 closable
                 :disable-transitions="false"
+                @close="row.spuSaleAttrValueList.splice(index,1)"
               >
                 {{ saleAttrValue.saleAttrValueName }}
               </el-tag>
 
               <!--  @keyup.enter.native="handleInputConfirm"
-                @blur="handleInputConfirm" -->
+                @blur="handleInputConfirm"
+                -->
+              <!--
+                  v-model="row.inputValue"
+                inputValue必須是輸入了數據，row身上才有這個屬性，
+                如果用戶沒有輸入數據，那麼row身上開始是不存在這個屬性的。
+              -->
               <el-input
                 v-if="row.inputVisible"
                 ref="saveTagInput"
@@ -114,7 +121,7 @@
                 class="button-new-tag"
                 size="small"
                 @click="showInput(row)"
-              >新增
+              > + 新增
               </el-button>
             </template>
           </el-table-column>
@@ -125,15 +132,20 @@
             width="150"
           >
             <template slot-scope="{row,$index}">
-              <HintButton type="danger" icon="el-icon-delete" title="刪除銷售屬性" />
+              <HintButton
+                type="danger"
+                icon="el-icon-delete"
+                title="刪除銷售屬性"
+                @click="spuForm.spuSaleAttrList.splice($index,1)"
+              />
             </template>
           </el-table-column>
         </el-table>
       </el-form-item>
 
       <el-form-item label-width="100px">
-        <el-button type="primary">保存</el-button>
-        <el-button @click="$emit('update:visible',false)">取消</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
+        <el-button @click="cancel">取消</el-button>
       </el-form-item>
 
     </el-form>
@@ -149,6 +161,8 @@ export default {
       // 和upload相關的動態數據
       dialogImageUrl: '',
       dialogVisible: false,
+
+      category3Id: '',
 
       // 請求初始化的spu詳情數據，這個spuForm也是後面添加要收集的對象，
       // 內部和修改請求回來的數據結構是一樣的
@@ -246,7 +260,9 @@ export default {
     },
 
     // 請求獲取修改spu的初始化數據
-    async  getUpdateInitData(spu) {
+    // spu就是父組件傳過來的row
+    async  getUpdateInitData(spu, category3Id) {
+      this.category3Id = category3Id
       // 發4個請求
       // 根據spu的id獲取spu的詳情
       // http://localhost:9529/dev-api/admin/product/getSpuById/4
@@ -283,7 +299,9 @@ export default {
     },
 
     // 請求獲取添加spu的初始化數據
-    async getAddInitData() {
+    async getAddInitData(category3Id) {
+      this.category3Id = category3Id
+
       // 發2個請求
       // 獲取所有的品牌列表
       // http://localhost:9529/dev-api/admin/product/baseTrademark/getTrademarkList
@@ -311,6 +329,7 @@ export default {
         saleAttrName,
         spuSaleAttrValueList: []
       }
+
       // 把銷售屬性對象添加到spu的銷售屬性列表當中
       this.spuForm.spuSaleAttrList.push(obj)
 
@@ -322,6 +341,9 @@ export default {
     showInput(row) {
       // row.inputVisible = true
       this.$set(row, 'inputVisible', true)
+
+      // 點擊切換input的時候，保證row身上有inputValue屬性，不至於拿到undefined
+      this.$set(row, 'inputValue', '')
 
       // 自動獲取焦點
       this.$nextTick(() => {
@@ -368,8 +390,92 @@ export default {
 
       // 再让input变为按钮
       row.inputVisible = false
-    }
+    },
 
+    // 添加spu或者修改spu的保存操作
+    async save() {
+      // 1、獲取參數數據
+      let { spuForm, spuImageList, category3Id } = this
+      // 2、整理參數
+      // 整理 category3Id
+      spuForm.category3Id = category3Id
+
+      // 整理圖片列表
+      // 圖片列表當中的圖片必須是這樣的結構
+      //   {
+      //    imgName: 'string',
+      //    imgUrl: 'string',
+      //   }
+      // 目前我們的圖片列表數據結構，前面有說過，包含之前已經有的和自己最近上船的差異
+      // 之前已經有的圖片都有imgName和imgUrl，也有name和url，而自己上傳的只有name和url(需要更改)
+      // map方法：根據老的數組生成一個新的數組，新的數組內部每一項和對應的老數組每一項有關
+      spuImageList = spuImageList.map(item =>
+        ({
+          imgName: item.name,
+          imgUrl: item.imgUrl || item.response.data
+        })
+      )
+      spuForm.spuImageList = spuImageList
+
+      // 整理銷售屬性，去除銷售屬性身上不需要的數據
+      spuForm.spuSaleAttrList.forEach(item => {
+        delete item.inputVisible
+        delete item.inputValue
+      })
+
+      // 3、發請求
+      try {
+        // 4、成功幹啥
+        await this.$API.spu.addUpdate(spuForm)
+        // 提示
+        this.$message.success('保存spu成功')
+        // 返回到列表頁
+        this.$emit('update:visible', false)
+        // 通知返回列表頁成功，在列表頁發請求重新獲取列表數據
+        this.$emit('backSuccess')
+        // 返回成功後把當前spuForm頁面的數據清空
+        this.resetData()
+      } catch (error) {
+        // 5、失敗幹啥
+        this.$message.error('保存spu失敗')
+      }
+    },
+
+    // 清空data当中数据
+    resetData() {
+      this.spuForm = {
+        // 这个里面初始化的所有数据，都是为了添加的时候收集所需要的
+        // 如果修改spu,是将获取到的spu详情数据，直接覆盖这里面的所有
+        category3Id: 0,
+        spuName: '',
+        description: '',
+        tmId: '',
+        spuImageList: [],
+        spuSaleAttrList: []
+      }
+
+      this.category3Id = ''
+
+      this.spuImageList = [] // 获取图片列表到时候存在这个里面，最后再把这个图片列表整理完成放到spuForm里面
+      this.trademarkList = [] // 获取所有的品牌列表存在这里面
+      this.baseSaleAttrList = [] // 获取所有的spu销售属性存在这里面
+
+      this.spuSaleAttrIdName = ''// 准备选择select之后收集销售id，但是最后是不是要这个id，不一定，先假设是
+
+      // 这两个数据是上传图片用的
+      this.dialogImageUrl = ''
+      this.dialogVisible = false
+    },
+
+    // 點擊取消
+    cancel() {
+      // 返回到列表頁
+      this.$emit('update:visible', false)
+      // 通知父組件回來
+      this.$emit('cancelSuccess')
+      // 清空收集的數據
+      this.resetData()
+    }
   }
 }
 </script>

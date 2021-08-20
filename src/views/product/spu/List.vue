@@ -57,7 +57,18 @@
                 @click="showUpdateSpuForm(row)"
               />
               <HintButton icon="el-icon-info" type="info" title="查看SPU的SKU列表" />
-              <HintButton icon="el-icon-delete" type="danger" title="刪除SPU" />
+              <el-popconfirm
+                :title="`確定刪除${row.spuName}嗎？`"
+                @onConfirm="deleteSpu(row)"
+              >
+                <HintButton
+                  slot="reference"
+                  icon="el-icon-delete"
+                  type="danger"
+                  title="刪除SPU"
+                />
+              </el-popconfirm>
+
             </template>
           </el-table-column>
         </el-table>
@@ -90,11 +101,13 @@
         v-show="isShowSpuForm"
         ref="spu"
         :visible.sync="isShowSpuForm"
+        @backSuccess="backSuccess"
+        @cancelSuccess="cancelSuccess"
       />
 
       <!-- sku的添加頁面 -->
       <!-- <div></div> -->
-      <SkuForm v-show="isShowSkuForm" />
+      <SkuForm v-show="isShowSkuForm" ref="sku" :visible.sync="isShowSkuForm" />
     </el-card>
   </div>
 </template>
@@ -165,18 +178,48 @@ export default {
     showAddSpuForm() {
       this.isShowSpuForm = true
       // 獲取到子組件對象，調用子組件裡面的方法，進行發請求
-      this.$refs.spu.getAddInitData()
+      this.$refs.spu.getAddInitData(this.category3Id)
     },
 
     // 點擊修改spu的回調，顯示spu的修改頁面 (和添加是同一個頁面)
     showUpdateSpuForm(row) {
+      this.flag = row.id // 這個數據只是為了讓返回的時候，判斷是怎麼返回來的
       this.isShowSpuForm = true
-      this.$refs.spu.getUpdateInitData(row)
+      this.$refs.spu.getUpdateInitData(row, this.category3Id)
     },
 
     // 點擊添加sku的回調，顯示sku的添加頁面
     showAddSkuForm(row) {
       this.isShowSkuForm = true
+      this.$refs.sku.getAddInitData(row, this.category1Id, this.category2Id)
+    },
+
+    // 保存spu成功返回
+    backSuccess() {
+      // 重新發請求spu列表數據
+      // 返回是怎麼返回的？添加成功返回的還是修改成功返回的？請求的哪一頁是不一樣的。
+      if (this.flag) {
+        this.getSpuList(this.page)
+      } else {
+        this.getSpuList()
+      }
+      this.flag = null // 重置標誌位
+    },
+
+    // 取消返回的回調
+    cancelSuccess() {
+      this.flag = null // 重置標誌位
+    },
+
+    // 刪除spu
+    async deleteSpu(row) {
+      try {
+        await this.$API.spu.remove(row.id)
+        this.$message.success('刪除spu成功')
+        this.getSpuList(this.SpuList.length > 1 ? this.page : this.page - 1)
+      } catch (error) {
+        this.$message.error('刪除spu失敗')
+      }
     }
 
   }
