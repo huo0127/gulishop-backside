@@ -1,6 +1,6 @@
 <template>
   <div>
-    <el-form label-width="80px" :model="skuForm">
+    <el-form label-width="100px" :model="skuForm">
       <el-form-item label="SPU 名稱" label-width="100px">
         {{ spu.spuName }}
       </el-form-item>
@@ -68,7 +68,6 @@
           border
           @selection-change="handleSelectionChange"
         >
-
           <el-table-column
             type="selection"
             width="55"

@@ -56,7 +56,7 @@
                 title="修改SPU"
                 @click="showUpdateSpuForm(row)"
               />
-              <HintButton icon="el-icon-info" type="info" title="查看SPU的SKU列表" />
+              <HintButton icon="el-icon-info" type="info" title="查看SPU的SKU列表" @click="showSkuList(row)" />
               <el-popconfirm
                 :title="`確定刪除${row.spuName}嗎？`"
                 @onConfirm="deleteSpu(row)"
@@ -109,6 +109,45 @@
       <!-- <div></div> -->
       <SkuForm v-show="isShowSkuForm" ref="sku" :visible.sync="isShowSkuForm" />
     </el-card>
+
+    <el-dialog
+      :visible.sync="dialogVisible"
+      width="width"
+      :title="`${spu.spuName} - sku列表`"
+      :before-close="handlerClose"
+    >
+      <el-table
+        v-loading="loading"
+        border
+        style="width: 100%"
+        :data="skuList"
+      >
+        <el-table-column
+          prop="skuName"
+          label="名稱"
+          width="width"
+        />
+        <el-table-column
+          prop="price"
+          label="價格"
+          width="width"
+        />
+        <el-table-column
+          prop="weight"
+          label="重量"
+          width="width"
+        />
+        <el-table-column
+          prop="prop"
+          label="默認圖片"
+          width="width"
+        >
+          <template slot-scope="{row,$index}">
+            <img :src="row.skuDefaultImg" alt="" style="width:100px;weight:100px">
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -135,8 +174,26 @@ export default {
 
       // 三個頁面顯示隱藏通過下面兩個數據做實現
       isShowSpuForm: false,
-      isShowSkuForm: false
+      isShowSkuForm: false,
 
+      // sku的列表需要的數據
+      dialogVisible: false,
+      spu: {},
+      skuList: [],
+      loading: true
+    }
+  },
+
+  // 通過監視解決三級連動的可操作性
+  watch: {
+    isShowSpuForm: {
+      handler(newVal, oldVal) {
+        this.isShowList = !newVal
+      }
+    },
+
+    isShowSkuForm(newVal, oldVal) {
+      this.isShowList = !newVal
     }
   },
 
@@ -220,6 +277,29 @@ export default {
       } catch (error) {
         this.$message.error('刪除spu失敗')
       }
+    },
+
+    // 顯示spu的sku列表
+    async showSkuList(row) {
+      // 彈出對話框
+      this.dialogVisible = true
+      // 保存spu，讓對話框可以使用spu的名稱
+      this.spu = row
+      // 請求獲取當前這個spu的sku列表
+      this.loading = true
+      const result = await this.$API.sku.getListBySpuId(row.id)
+      if (result.code === 200) {
+        this.skuList = result.data
+      }
+      this.loading = false
+    },
+
+    // dialog關閉之前的處理，這個函數當中需要手動關閉dialog
+    handlerClose(done) {
+      // 關閉dialog的時候把該重製的數據重製
+      this.skuList = []
+      this.dialogVisible = false
+      this.loading = true
     }
 
   }
