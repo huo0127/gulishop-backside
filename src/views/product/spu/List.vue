@@ -180,7 +180,7 @@ export default {
       dialogVisible: false,
       spu: {},
       skuList: [],
-      loading: true
+      loading: false
     }
   },
 
@@ -299,7 +299,7 @@ export default {
       // 關閉dialog的時候把該重製的數據重製
       this.skuList = []
       this.dialogVisible = false
-      this.loading = true
+      this.loading = false
     }
 
   }
