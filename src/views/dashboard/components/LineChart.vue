@@ -4,30 +4,37 @@
 
 <script>
 import echarts from 'echarts' // 引入echarts
+import resize from './mixins/resize'
 require('echarts/theme/vintage') // 引入主題
 export default {
   name: '',
+  mixins: [resize],
   props: {
     width: {
-      tpye: String,
+      type: String,
       default: '100%'
     },
     height: {
-      tpye: String,
-      delete: '350px'
+      type: String,
+      default: '350px'
     },
+    // 传递的系列数据
     chartData: {
-      type: String,
-      require: true
+      type: Object,
+      required: true
     },
-    yTitle: {
+    // y轴的名称
+    yTittle: {
       type: String,
-      require: true
+      required: true
     }
   },
+
   data() {
     return {
       chart: null
+      // $_sidebarElm: null, // sizebar根元素
+      // $_resizeHandler: null // 更新图表的函数
     }
   },
 

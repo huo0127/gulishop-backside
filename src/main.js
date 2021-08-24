@@ -22,15 +22,19 @@ import '@/permission' // permission control
 // 這樣的方式只能把trademark相關的api拿到，也就是說$API就只有trademark
 // 的接口，後期我們還要寫其他api，$API內部就沒有其他的接口了。
 
-import * as API from '@/api/product'
+import * as API from '@/api/index'
 import CategorySelector from '@/components/CategorySelector'
 import HintButton from '@/components/HintButton'
 
 import '@/plugins/vcharts'
 
+import { hasBtnPermission } from '@/utils/permission'
+
 Vue.component('CategorySelector', CategorySelector)
 Vue.component('HintButton', HintButton)
 Vue.prototype.$API = API
+
+Vue.prototype.$hasBP = hasBtnPermission // 把檢測按鈕權限的函數掛在原型上
 // {
 //   trademark,
 //   attr

@@ -1,6 +1,11 @@
 <template>
   <div>
-    <el-button type="primary" icon="el-icon-plus" @click="showAddDialog">新增</el-button>
+    <el-button
+      v-if="$hasBP('btn.trademark.add')"
+      type="primary"
+      icon="el-icon-plus"
+      @click="showAddDialog"
+    >新增</el-button>
     <!--
       el-table為表格
       表格當中是一列一列的el-table-column
@@ -66,12 +71,14 @@
           slot-scope="{row,$index}"
         >
           <el-button
+            v-if="$hasBP('btn.trademark.update')"
             type="warning"
             icon="el-icon-edit"
             @click="showUpdateDialog(row)"
           >修改
           </el-button>
           <el-button
+            v-if="$hasBP('btn.trademark.remove')"
             type="danger"
             icon="el-icon-delete"
             @click="deleteTrademark(row)"

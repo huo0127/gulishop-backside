@@ -33,8 +33,10 @@ router.beforeEach(async(to, from, next) => {
         try {
           // get user info
           await store.dispatch('user/getInfo')
-
-          next()
+          // 之前獲取到用戶訊息之後，直接放行，沒問題 next()
+          // 現在獲取用戶訊息之後，是動態添加路的
+          // next()
+          next({ ...to })
         } catch (error) {
           // remove token and go to login page to re-login
           await store.dispatch('user/resetToken')
